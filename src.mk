@@ -5,4 +5,6 @@ LIST_SRC		=	\
 					icmp.c		\
 					main.c		\
 					ping.c		\
-					socket.c
+					print.c		\
+					socket.c	\
+					statistics.c

@@ -14,6 +14,7 @@
 #include <netinet/ip_icmp.h>
 #include <netdb.h>
 #include <string.h>
+#include <sys/time.h>
 
 #include "icmp.h"
 
@@ -34,8 +35,8 @@ struct icmp create_icmp_echo_header(uint16_t id, uint16_t sequence) {
 
     header.icmp_type = ICMP_ECHO;
     header.icmp_code = 0;
-    header.icmp_id = id;
-    header.icmp_seq = sequence;
+    header.icmp_id = htons(id);
+    header.icmp_seq = htons(sequence);
     header.icmp_cksum = 0;
     return header;
 }
