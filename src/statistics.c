@@ -10,6 +10,8 @@
 /*                                                                            */
 /* ************************************************************************** */
 
+#include <math.h>
+
 #include "ping.h"
 
 void statistics_init(ping_statistics_t *statistics) {
@@ -17,8 +19,7 @@ void statistics_init(ping_statistics_t *statistics) {
     statistics->packets_received = 0;
     statistics->min_ms = 0;
     statistics->max_ms = 0;
-    statistics->avg_ms = 0;
-    statistics->is_init = false;
+    statistics->sum_ms = 0;
 }
 
 void statistics_packet_transmit(ping_statistics_t *statistics) {
@@ -26,12 +27,9 @@ void statistics_packet_transmit(ping_statistics_t *statistics) {
 }
 
 void statistics_packet_receive(ping_statistics_t *statistics, double ms) {
-    statistics->packets_received++;
-    if (!statistics->is_init) {
+    if (statistics->packets_received == 0) {
         statistics->min_ms = ms;
         statistics->max_ms = ms;
-        statistics->avg_ms = ms;
-        statistics->is_init = true;
     } else {
         if (ms < statistics->min_ms) {
             statistics->min_ms = ms;
@@ -39,6 +37,19 @@ void statistics_packet_receive(ping_statistics_t *statistics, double ms) {
         if (ms > statistics->max_ms) {
             statistics->max_ms = ms;
         }
-        statistics->avg_ms = (statistics->avg_ms + ms) / 2;
     }
+    statistics->sum_ms += ms;
+    statistics->sum_squared_ms += ms * ms;
+    statistics->packets_received++;
 }
+
+double statistics_get_average(ping_statistics_t *statistics) {
+    return statistics->sum_ms / statistics->packets_received;
+}
+
+double statistics_get_stddev(ping_statistics_t *statistics) {
+    double mean = statistics_get_average(statistics);
+    double variance = statistics->sum_squared_ms / statistics->packets_received - mean * mean;
+    return sqrt(variance);
+}
+

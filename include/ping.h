@@ -23,10 +23,10 @@
 typedef struct {
     uint32_t packets_transmitted;
     uint32_t packets_received;
+    double sum_ms;
+    double sum_squared_ms;
     double min_ms;
     double max_ms;
-    double avg_ms;
-    bool is_init;
 } ping_statistics_t;
 
 typedef struct {

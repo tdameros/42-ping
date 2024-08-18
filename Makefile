@@ -18,12 +18,12 @@ OBJ				=	$(patsubst %.c, $(DIR_BUILD)%.o, $(SRC))
 DEP				=	$(patsubst %.c, $(DIR_BUILD)%.d, $(SRC))
 SRC				=	$(addprefix $(DIR_SRC),$(LIST_SRC))
 INCLUDES		=	$(addprefix -I , $(DIR_INCLUDES))
-MAKELIBFT		=	$(MAKE) -C $(DIR_LIBFT)
 
 # ------------ COMPILATION ------------ #
 
 CFLAGS			=	-Wall -Wextra -Werror -O3
 DEBUG_CFLAGS	=	-Wall -Wextra -Werror -fsanitize=address -g3
+LIBS			=	-lm
 
 DEP_FLAGS		=	-MMD -MP
 
@@ -42,7 +42,7 @@ all:
 # ---------- VARIABLES RULES ---------- #
 
 $(NAME):		$(OBJ)
-				$(CC) $(CFLAGS) $(INCLUDES) -o $(NAME) $(OBJ)
+				$(CC) $(CFLAGS) $(INCLUDES) -o $(NAME) $(OBJ) $(LIBS)
 
 # ---------- COMPILED RULES ----------- #
 
@@ -86,4 +86,4 @@ build_docker_image:
 
 .PHONY: run_docker_container
 run_docker_container:
-				docker run -it  -v .:/ft_ping/ ft_ping
+				docker run --rm -it -v .:/ft_ping/ ft_ping

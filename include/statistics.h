@@ -18,4 +18,6 @@
 void statistics_init(ping_statistics_t *statistics);
 void statistics_packet_receive(ping_statistics_t *statistics, double ms);
 void statistics_packet_transmit(ping_statistics_t *statistics);
+double statistics_get_average(ping_statistics_t *statistics);
+double statistics_get_stddev(ping_statistics_t *statistics);
 #endif

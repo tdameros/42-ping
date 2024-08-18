@@ -14,7 +14,7 @@
 #include <netinet/ip_icmp.h>
 #include <netdb.h>
 
-
+#include "statistics.h"
 #include "print.h"
 #include "ping.h"
 
@@ -75,9 +75,9 @@ void print_ping_statistics(icmp_ping_t *ping) {
     printf("--- %s ping statistics ---\n", ping->original_host);
     printf("%d packets transmitted, %d packets received, %d%% packet loss\n", transmitted, received, packet_loss);
     printf("round-trip min/avg/max/stddev = %.3f/%.3f/%.3f/%.3f ms\n", ping->statistics.min_ms,
-           ping->statistics.avg_ms,
+           statistics_get_average(&ping->statistics),
            ping->statistics.max_ms,
-           0.0);
+           statistics_get_stddev(&ping->statistics));
 }
 
 static void print_ping_echo_reply(ping_result_t *result) {
