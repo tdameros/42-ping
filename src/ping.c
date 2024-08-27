@@ -24,10 +24,15 @@
 
 static int32_t send_icmp_ping(icmp_ping_t *ping);
 static ping_result_t receive_icmp_ping(icmp_ping_t *ping, double start_time);
+static ping_result_t parse_packet(icmp_ping_t *ping, int bytes_received, struct sockaddr_in reply_addr, double start_time);
 static double get_current_time_in_ms();
 
 int32_t init_icmp_ping(icmp_ping_t *ping, char *hostname) {
     int32_t socket = create_icmp_socket();
+    if (socket < 0) {
+        perror("socket");
+        return -1;
+    }
     set_icmp_socket_timeout(socket, 1, 0);
     struct sockaddr_in address = {0};
     if (resolve_host(hostname, &address) < 0) {
@@ -67,7 +72,6 @@ static int32_t send_icmp_ping(icmp_ping_t *ping) {
     return 0;
 }
 
-static ping_result_t parse_packet(icmp_ping_t *ping, int bytes_received, struct sockaddr_in reply_addr, double start_time);
 
 static ping_result_t receive_icmp_ping(icmp_ping_t *ping, double start_time) {
     ping_result_t result = {0};
@@ -108,7 +112,7 @@ static ping_result_t parse_packet(icmp_ping_t *ping, int bytes_received, struct 
         result.seq = ntohs(recv_icmp_hdr->un.echo.sequence);
     }
     if (original_id != ping->id || result.type == ICMP_ECHO) {
-        return (ping_result_t) {.status = PING_ERROR};  // Return an empty result indicating a continue condition
+        return (ping_result_t) {.status = PING_ERROR};
     }
     result.ttl = ip_hdr->ttl;
     result.time = get_current_time_in_ms() - start_time;
@@ -116,6 +120,13 @@ static ping_result_t parse_packet(icmp_ping_t *ping, int bytes_received, struct 
     result.size = bytes_received - sizeof(struct iphdr);
     result.code = recv_icmp_hdr->code;
     result.status = PING_SUCCESS;
+
+    uint16_t checksum = recv_icmp_hdr->checksum;
+    recv_icmp_hdr->checksum = 0;
+    if (checksum != calculate_icmp_checksum(recv_icmp_hdr, bytes_received - sizeof(struct iphdr))) {
+        fprintf(stderr, "checksum mismatch from %s\n", ping->original_host);
+        return result;
+    }
     if (result.type == ICMP_ECHOREPLY) {
         statistics_packet_receive(&ping->statistics, result.time);
     }
