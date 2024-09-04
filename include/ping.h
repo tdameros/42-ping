@@ -16,6 +16,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <arpa/inet.h>
+#include <netinet/ip_icmp.h>
 
 #define MAX_PACKET_SIZE 1024
 #define DEFAULT_PACKET_SIZE 64
@@ -49,6 +50,7 @@ typedef enum {
 
 typedef struct {
     ping_status_t status;
+    struct ip *ip_icmp;
     double time;
     struct sockaddr_in reply_address;
     uint8_t type;

@@ -100,8 +100,13 @@ static ping_result_t parse_packet(icmp_ping_t *ping, int bytes_received, struct 
     ping_result_t result = {0};
     struct iphdr *ip_hdr = (struct iphdr *) ping->packet;
     struct icmphdr *recv_icmp_hdr = (struct icmphdr *) (ping->packet + sizeof(struct iphdr));
+//    struct ip *ip_header = &recv_icmp_hdr->icmp_ip;
     uint16_t original_id;
+    struct icmp *ipcmp = (struct icmp *)(ping->packet + sizeof(struct ip));
+    struct ip *ip = &ipcmp->icmp_ip;
 
+
+    result.ip_icmp = ip;
     result.type = recv_icmp_hdr->type;
     if (result.type != ICMP_ECHOREPLY && result.type != ICMP_ECHO) {
         struct icmphdr *original_icmp_hdr = (struct icmphdr *) (ping->packet + sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(struct iphdr));

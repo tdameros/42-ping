@@ -17,11 +17,12 @@
 #include "statistics.h"
 #include "print.h"
 #include "ping.h"
+#include "flags.h"
 
-static void print_ping_echo_reply(ping_result_t *result);
-static void print_ping_timeout(ping_result_t *result);
-static void print_ping_description(ping_result_t *result);
-static char *get_icmp_description(ping_result_t *result);
+static void print_ping_echo_reply(const ping_result_t *result);
+static void print_ping_timeout(const ping_result_t *result);
+static void print_ping_description(const ping_result_t *result, const flags_t *flags);
+static char *get_icmp_description(const ping_result_t *result);
 
 typedef struct
 {
@@ -51,24 +52,32 @@ icmp_code_description_t icmp_code_description[] =
         {ICMP_TIME_EXCEEDED, ICMP_EXC_FRAGTIME, "Frag reassembly time exceeded"}
     };
 
-void print_ping_start(icmp_ping_t *ping) {
-    printf("PING %s (%s): %ld data bytes\n",
-           ping->original_host,
-           inet_ntoa(ping->destination.sin_addr),
-           DEFAULT_PACKET_SIZE - sizeof(struct icmphdr));
+void print_ping_start(const icmp_ping_t *ping, const flags_t *flags) {
+    if (flags->options.verbose) {
+        printf("PING %s (%s): %ld data bytes, id 0x%04x = %u\n",
+               ping->original_host,
+               inet_ntoa(ping->destination.sin_addr),
+               DEFAULT_PACKET_SIZE - sizeof(struct icmphdr),
+                   ping->id, ping->id);
+    } else {
+        printf("PING %s (%s): %ld data bytes\n",
+               ping->original_host,
+               inet_ntoa(ping->destination.sin_addr),
+               DEFAULT_PACKET_SIZE - sizeof(struct icmphdr));
+    }
 }
 
-void print_ping_result(ping_result_t *result) {
+void print_ping_result(const ping_result_t *result, const flags_t *flags) {
     if (result->status == PING_SUCCESS && result->code == ICMP_ECHOREPLY) {
         print_ping_echo_reply(result);
     } else if (result->status == PING_TIMEOUT) {
         print_ping_timeout(result);
     } else {
-        print_ping_description(result);
+        print_ping_description(result, flags);
     }
 }
 
-void print_ping_statistics(icmp_ping_t *ping) {
+void print_ping_statistics(const icmp_ping_t *ping) {
     uint32_t transmitted = ping->statistics.packets_transmitted;
     uint32_t received = ping->statistics.packets_received;
     uint32_t packet_loss = (transmitted - received) / transmitted * 100;
@@ -80,7 +89,7 @@ void print_ping_statistics(icmp_ping_t *ping) {
            statistics_get_stddev(&ping->statistics));
 }
 
-static void print_ping_echo_reply(ping_result_t *result) {
+static void print_ping_echo_reply(const ping_result_t *result) {
     printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n",
            result->size,
            inet_ntoa(result->reply_address.sin_addr),
@@ -89,11 +98,11 @@ static void print_ping_echo_reply(ping_result_t *result) {
            result->time);
 }
 
-static void print_ping_timeout(ping_result_t *result) {
+static void print_ping_timeout(const ping_result_t *result) {
     printf("Request timeout for icmp_seq %d\n", result->seq);
 }
 
-static void print_ping_description(ping_result_t *result) {
+static void print_ping_description(const ping_result_t *result, const flags_t *flags) {
     char *description = get_icmp_description(result);
     char host[NI_MAXHOST];
     int32_t result_code = getnameinfo((struct sockaddr *)&result->reply_address, sizeof(result->reply_address), host, NI_MAXHOST, NULL, 0, 0);
@@ -109,9 +118,42 @@ static void print_ping_description(ping_result_t *result) {
                inet_ntoa(result->reply_address.sin_addr),
                description);
     }
+    if (flags->options.verbose) {
+
+        printf ("IP Hdr Dump:\n ");
+        for (uint32_t j = 0; j < sizeof (*result->ip_icmp); ++j)
+            printf ("%02x%s", *((unsigned char *) result->ip_icmp + j),
+                    (j % 2) ? " " : "");	/* Group bytes two by two.  */
+        printf ("\n");
+        printf
+            ("Vr HL TOS  Len   ID Flg  off TTL Pro  cks      Src\tDst\tData\n");
+        printf (" %1x  %1x  %02x", result->ip_icmp->ip_v, result->ip_icmp->ip_hl, result->ip_icmp->ip_tos);
+        printf(" %04x %04x",
+                (result->ip_icmp->ip_len > 0x2000) ? ntohs (result->ip_icmp->ip_len) : result->ip_icmp->ip_len,
+                ntohs (result->ip_icmp->ip_id));
+        printf("   %1x %04x", (ntohs (result->ip_icmp->ip_off) & 0xe000) >> 13,
+                ntohs (result->ip_icmp->ip_off) & 0x1fff);
+        printf("  %02x  %02x %04x", result->ip_icmp->ip_ttl, result->ip_icmp->ip_p, ntohs (result->ip_icmp->ip_sum));
+        printf(" %s ", inet_ntoa (*((struct in_addr *) &result->ip_icmp->ip_src)));
+        printf(" %s ", inet_ntoa (*((struct in_addr *) &result->ip_icmp->ip_dst)));
+        uint32_t hlen = result->ip_icmp->ip_hl << 2;
+        uint8_t *cp = (unsigned char *) result->ip_icmp + sizeof (*result->ip_icmp);	/* point to options */
+        while (hlen-- > sizeof (*result->ip_icmp))
+            printf ("%02x", *cp++);
+    printf("\n");
+        int type = *cp;
+        int code = *(cp + 1);
+
+        printf ("ICMP: type %u, code %u, size %u", type, code,
+                ntohs (result->ip_icmp->ip_len) - hlen);
+        if (type == ICMP_ECHOREPLY || type == ICMP_ECHO)
+            printf (", id 0x%04x, seq 0x%04x", *(cp + 4) * 256 + *(cp + 5),
+                    *(cp + 6) * 256 + *(cp + 7));
+        printf ("\n");
+    }
 }
 
-static char *get_icmp_description(ping_result_t *result) {
+static char *get_icmp_description(const ping_result_t *result) {
     for (uint32_t i = 0; i < sizeof(icmp_code_description) / sizeof(icmp_code_description[0]); i++) {
         if (result->status == PING_SUCCESS && result->type == icmp_code_description[i].type && result->code == icmp_code_description[i].code) {
             return icmp_code_description[i].diag;

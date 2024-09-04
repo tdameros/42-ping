@@ -16,9 +16,10 @@
 #include <netinet/ip_icmp.h>
 
 #include "ping.h"
+#include "flags.h"
 
-void print_ping_start(icmp_ping_t *ping);
-void print_ping_result(ping_result_t *result);
-void print_ping_statistics(icmp_ping_t *ping);
+void print_ping_start(const icmp_ping_t *ping, const flags_t *flags);
+void print_ping_result(const ping_result_t *result, const flags_t *flags);
+void print_ping_statistics(const icmp_ping_t *ping);
 
 #endif
