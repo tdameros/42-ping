@@ -18,6 +18,8 @@
 #include <arpa/inet.h>
 #include <netinet/ip_icmp.h>
 
+#include "flags.h"
+
 #define MAX_PACKET_SIZE 1024
 #define DEFAULT_PACKET_SIZE 64
 
@@ -60,6 +62,6 @@ typedef struct {
     uint32_t size;
 } ping_result_t;
 
-int32_t init_icmp_ping(icmp_ping_t *ping, char *hostname);
-ping_result_t icmp_ping(icmp_ping_t *ping);
+int32_t init_icmp_ping(icmp_ping_t *ping, flags_t flags);
+ping_result_t icmp_ping(icmp_ping_t *ping, flags_t flags);
 #endif

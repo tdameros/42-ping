@@ -19,7 +19,7 @@
 #include "ping.h"
 #include "flags.h"
 
-static void print_ping_echo_reply(const ping_result_t *result);
+static void print_ping_echo_reply(const ping_result_t *result, const flags_t *flags);
 static void print_ping_timeout(const ping_result_t *result);
 static void print_ping_description(const ping_result_t *result, const flags_t *flags);
 static char *get_icmp_description(const ping_result_t *result);
@@ -95,7 +95,7 @@ void print_ping_start(const icmp_ping_t *ping, const flags_t *flags) {
 
 void print_ping_result(const ping_result_t *result, const flags_t *flags) {
     if (result->status == PING_SUCCESS && result->code == ICMP_ECHOREPLY) {
-        print_ping_echo_reply(result);
+        print_ping_echo_reply(result, flags);
     } else if (result->status == PING_TIMEOUT) {
         print_ping_timeout(result);
     } else {
@@ -106,22 +106,25 @@ void print_ping_result(const ping_result_t *result, const flags_t *flags) {
 void print_ping_statistics(const icmp_ping_t *ping) {
     uint32_t transmitted = ping->statistics.packets_transmitted;
     uint32_t received = ping->statistics.packets_received;
-    uint32_t packet_loss = (transmitted - received) / transmitted * 100;
+    uint8_t packet_loss = (double) (transmitted - received) / transmitted * 100;
+
     printf("--- %s ping statistics ---\n", ping->original_host);
-    printf("%d packets transmitted, %d packets received, %d%% packet loss\n", transmitted, received, packet_loss);
+    printf("%d packets transmitted, %d packets received, %u%% packet loss\n", transmitted, received, packet_loss);
     printf("round-trip min/avg/max/stddev = %.3f/%.3f/%.3f/%.3f ms\n", ping->statistics.min_ms,
            statistics_get_average(&ping->statistics),
            ping->statistics.max_ms,
            statistics_get_stddev(&ping->statistics));
 }
 
-static void print_ping_echo_reply(const ping_result_t *result) {
-    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n",
-           result->size,
-           inet_ntoa(result->reply_address.sin_addr),
-           result->seq,
-           result->ttl,
-           result->time);
+static void print_ping_echo_reply(const ping_result_t *result, const flags_t *flags) {
+    if (!flags->options.flood) {
+        printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n",
+               result->size,
+               inet_ntoa(result->reply_address.sin_addr),
+               result->seq,
+               result->ttl,
+               result->time);
+    }
 }
 
 static void print_ping_timeout(const ping_result_t *result) {

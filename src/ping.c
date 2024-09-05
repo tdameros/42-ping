@@ -12,36 +12,40 @@
 
 #include <stdint.h>
 #include <arpa/inet.h>
-#include <sys/time.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <netinet/ip_icmp.h>
 #include <string.h>
 
+#include "time.h"
 #include "icmp.h"
 #include "socket.h"
 #include "ping.h"
 #include "statistics.h"
+#include "flags.h"
 
 static int32_t send_icmp_ping(icmp_ping_t *ping);
-static ping_result_t receive_icmp_ping(icmp_ping_t *ping, double start_time);
+static ping_result_t receive_icmp_ping(icmp_ping_t *ping, flags_t flags, double start_time);
 static ping_result_t parse_packet(icmp_ping_t *ping, int bytes_received, struct sockaddr_in reply_addr, double start_time);
-static double get_current_time_in_ms();
 
-int32_t init_icmp_ping(icmp_ping_t *ping, char *hostname) {
+int32_t init_icmp_ping(icmp_ping_t *ping, flags_t flags) {
     int32_t socket = create_icmp_socket();
     if (socket < 0) {
         perror("ft_ping: socket");
         return -1;
     }
-    set_icmp_socket_timeout(socket, 1, 0);
+    if (set_icmp_socket_timeout(socket, 1, 0) < 0) {
+        perror("ft_ping: socket_timeout");
+        return -1;
+    }
+    set_icmp_socket_debug(socket, flags.options.debug);
     struct sockaddr_in address = {0};
-    if (resolve_host(hostname, &address) < 0) {
+    if (resolve_host(flags.hostname, &address) < 0) {
         fprintf(stderr, "ft_ping: unknow host\n");
         return -1;
     }
     memset(ping, 0, sizeof(icmp_ping_t));
-    ping->original_host = hostname;
+    ping->original_host = flags.hostname;
     ping->socket = socket;
     ping->destination = address;
     ping->id = getpid();
@@ -50,10 +54,10 @@ int32_t init_icmp_ping(icmp_ping_t *ping, char *hostname) {
     return 0;
 }
 
-ping_result_t icmp_ping(icmp_ping_t *ping) {
+ping_result_t icmp_ping(icmp_ping_t *ping, flags_t flags) {
     double start_time = get_current_time_in_ms();
     send_icmp_ping(ping);
-    ping_result_t result = receive_icmp_ping(ping, start_time);
+    ping_result_t result = receive_icmp_ping(ping, flags, start_time);
     ping->seq++;
     return result;
 }
@@ -74,11 +78,11 @@ static int32_t send_icmp_ping(icmp_ping_t *ping) {
 }
 
 
-static ping_result_t receive_icmp_ping(icmp_ping_t *ping, double start_time) {
+static ping_result_t receive_icmp_ping(icmp_ping_t *ping, flags_t flags, double start_time) {
     ping_result_t result = {0};
     struct sockaddr_in reply_addr;
     socklen_t reply_addr_len = sizeof(reply_addr);
-    while (get_current_time_in_ms() - start_time < 2000) {
+    while (get_current_time_in_ms() - start_time <= flags.linger_value) {
         int bytes_received = recvfrom(ping->socket,
                                       ping->packet,
                                       MAX_PACKET_SIZE,
@@ -131,14 +135,8 @@ static ping_result_t parse_packet(icmp_ping_t *ping, int bytes_received, struct 
         fprintf(stderr, "checksum mismatch from %s\n", ping->original_host);
         return result;
     }
-    if (result.type == ICMP_ECHOREPLY) {
+    if (result.type == ICMP_ECHOREPLY && result.code == ICMP_ECHOREPLY) {
         statistics_packet_receive(&ping->statistics, result.time);
     }
     return result;
-}
-
-static double get_current_time_in_ms() {
-    struct timeval current_time;
-    gettimeofday(&current_time, NULL);
-    return ((double)current_time.tv_sec) * 1000.0 + ((double)current_time.tv_usec) / 1000.0;
 }

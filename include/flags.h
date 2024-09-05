@@ -16,9 +16,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define DEFAULT_INTERVAL 1
+#define DEFAULT_LINGER 1000
+
 typedef struct {
     char *hostname;
     uint32_t count_value;
+    uint32_t interval_value;
+    uint32_t timeout_value;
+    uint32_t linger_value;
     struct {
         uint8_t verbose: 1;
         uint8_t help: 1;
@@ -26,8 +32,8 @@ typedef struct {
         uint8_t flood: 1;
         uint8_t interval: 1;
         uint8_t timeout: 1;
+        uint8_t linger: 1;
         uint8_t debug: 1;
-        uint8_t _reserved: 1;
     } options;
 } flags_t;
 
