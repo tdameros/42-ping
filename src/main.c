@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     sa.sa_flags = 0;
     sa.sa_handler = handle_sigint;
     if (sigaction(SIGINT, &sa, NULL) == -1) {
-        perror("sigaction");
+        perror("ft_ping: sigaction");
     }
 
     icmp_ping_t ping = {0};

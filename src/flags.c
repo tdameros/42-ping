@@ -16,6 +16,9 @@
 #include <stdlib.h>
 #include "flags.h"
 
+#define ERROR_MSG_TRY_HELP "Try 'ft_ping --help' or 'ft_ping --usage' for more information."
+
+
 int8_t parse_flags(int argc, char *argv[], flags_t *flags) {
     int opt;
     int option_index = 0;
@@ -47,7 +50,7 @@ int8_t parse_flags(int argc, char *argv[], flags_t *flags) {
                 flags->options.verbose = true;
                 break;
             default:
-                fprintf(stderr, "Try 'ft_ping --help' or 'ft_ping --usage'for more information.\n");
+                fprintf(stderr, ERROR_MSG_TRY_HELP"\n");
                 return -1;
         }
     }
@@ -57,7 +60,7 @@ int8_t parse_flags(int argc, char *argv[], flags_t *flags) {
         return 0;
     } else {
         fprintf(stderr, "ft_ping: missing host operand\n");
-        fprintf(stderr, "Try 'ft_ping --help' or 'ft_ping --usage'for more information.\n");
+        fprintf(stderr, ERROR_MSG_TRY_HELP"\n");
         return -1;
     }
 }

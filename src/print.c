@@ -31,6 +31,8 @@ typedef struct
     char *diag;
 } icmp_code_description_t;
 
+
+#ifdef __linux__
 icmp_code_description_t icmp_code_description[] =
     {
         {ICMP_DEST_UNREACH, ICMP_NET_UNREACH, "Destination Net Unreachable"},
@@ -51,19 +53,43 @@ icmp_code_description_t icmp_code_description[] =
         {ICMP_TIME_EXCEEDED, ICMP_EXC_TTL, "Time to live exceeded"},
         {ICMP_TIME_EXCEEDED, ICMP_EXC_FRAGTIME, "Frag reassembly time exceeded"}
     };
+#endif
+#ifdef __APPLE__
+icmp_code_description_t icmp_code_description[] =
+    {
+        {ICMP_UNREACH, ICMP_UNREACH_NET, "Destination Net Unreachable"},
+        {ICMP_UNREACH, ICMP_UNREACH_HOST, "Destination Host Unreachable"},
+        {ICMP_UNREACH, ICMP_UNREACH_PROTOCOL, "Destination Protocol Unreachable"},
+        {ICMP_UNREACH, ICMP_UNREACH_PORT, "Destination Port Unreachable"},
+        {ICMP_UNREACH, ICMP_UNREACH_NEEDFRAG, "Fragmentation needed and DF set"},
+        {ICMP_UNREACH, ICMP_UNREACH_SRCFAIL, "Source Route Failed"},
+        {ICMP_UNREACH, ICMP_UNREACH_NET_UNKNOWN, "Network Unknown"},
+        {ICMP_UNREACH, ICMP_UNREACH_HOST_UNKNOWN, "Host Unknown"},
+        {ICMP_UNREACH, ICMP_UNREACH_ISOLATED, "Host Isolated"},
+        {ICMP_UNREACH, ICMP_UNREACH_TOSNET, "Destination Network Unreachable At This TOS"},
+        {ICMP_UNREACH, ICMP_UNREACH_TOSHOST, "Destination Host Unreachable At This TOS"},
+        {ICMP_REDIRECT, ICMP_REDIRECT_NET, "Redirect Network"},
+        {ICMP_REDIRECT, ICMP_REDIRECT_HOST, "Redirect Host"},
+        {ICMP_REDIRECT, ICMP_REDIRECT_TOSNET, "Redirect Type of Service and Network"},
+        {ICMP_REDIRECT, ICMP_REDIRECT_TOSHOST, "Redirect Type of Service and Host"},
+        {ICMP_TIMXCEED, ICMP_TIMXCEED_INTRANS, "Time to live exceeded"},
+        {ICMP_TIMXCEED, ICMP_TIMXCEED_REASS, "Frag reassembly time exceeded"}
+    };
+
+#endif
 
 void print_ping_start(const icmp_ping_t *ping, const flags_t *flags) {
     if (flags->options.verbose) {
-        printf("PING %s (%s): %ld data bytes, id 0x%04x = %u\n",
+        printf("PING %s (%s): %d data bytes, id 0x%04x = %u\n",
                ping->original_host,
                inet_ntoa(ping->destination.sin_addr),
-               DEFAULT_PACKET_SIZE - sizeof(struct icmphdr),
+               DEFAULT_PACKET_SIZE - ICMP_MINLEN,
                    ping->id, ping->id);
     } else {
-        printf("PING %s (%s): %ld data bytes\n",
+        printf("PING %s (%s): %d data bytes\n",
                ping->original_host,
                inet_ntoa(ping->destination.sin_addr),
-               DEFAULT_PACKET_SIZE - sizeof(struct icmphdr));
+               DEFAULT_PACKET_SIZE - ICMP_MINLEN);
     }
 }
 

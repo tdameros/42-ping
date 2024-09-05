@@ -11,10 +11,9 @@
 /* ************************************************************************** */
 
 #include <stdint.h>
-#include <netinet/ip_icmp.h>
 #include <sys/time.h>
+#include <stddef.h>
 #include <netdb.h>
-#include <stdlib.h>
 
 #include "socket.h"
 

@@ -12,15 +12,16 @@
 
 #include <stdint.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <netinet/ip_icmp.h>
+#include <string.h>
+
 #include "icmp.h"
 #include "socket.h"
 #include "ping.h"
-#include <netinet/ip_icmp.h>
-#include <string.h>
 #include "statistics.h"
-#include <sys/time.h>
 
 static int32_t send_icmp_ping(icmp_ping_t *ping);
 static ping_result_t receive_icmp_ping(icmp_ping_t *ping, double start_time);
@@ -30,7 +31,7 @@ static double get_current_time_in_ms();
 int32_t init_icmp_ping(icmp_ping_t *ping, char *hostname) {
     int32_t socket = create_icmp_socket();
     if (socket < 0) {
-        perror("socket");
+        perror("ft_ping: socket");
         return -1;
     }
     set_icmp_socket_timeout(socket, 1, 0);
@@ -65,7 +66,7 @@ static int32_t send_icmp_ping(icmp_ping_t *ping) {
                0,
                (struct sockaddr *) &ping->destination,
                sizeof(ping->destination)) < 0) {
-        perror("sendto");
+        perror("ft_ping: sendto");
         return -1;
     }
     statistics_packet_transmit(&ping->statistics);
@@ -93,42 +94,40 @@ static ping_result_t receive_icmp_ping(icmp_ping_t *ping, double start_time) {
         }
     }
     result.status = PING_TIMEOUT;
+    result.seq = ping->seq;
     return result;
 }
 
 static ping_result_t parse_packet(icmp_ping_t *ping, int bytes_received, struct sockaddr_in reply_addr, double start_time) {
     ping_result_t result = {0};
-    struct iphdr *ip_hdr = (struct iphdr *) ping->packet;
-    struct icmphdr *recv_icmp_hdr = (struct icmphdr *) (ping->packet + sizeof(struct iphdr));
-//    struct ip *ip_header = &recv_icmp_hdr->icmp_ip;
+    struct ip *receive_ip_header = (struct ip *) ping->packet;
+    struct icmp *receive_icmp_header = (struct icmp *) (ping->packet + sizeof(struct ip));
+    struct ip *ip_icmp = &receive_icmp_header->icmp_ip;
     uint16_t original_id;
-    struct icmp *ipcmp = (struct icmp *)(ping->packet + sizeof(struct ip));
-    struct ip *ip = &ipcmp->icmp_ip;
 
-
-    result.ip_icmp = ip;
-    result.type = recv_icmp_hdr->type;
+    result.ip_icmp = ip_icmp;
+    result.type = receive_icmp_header->icmp_type;
     if (result.type != ICMP_ECHOREPLY && result.type != ICMP_ECHO) {
-        struct icmphdr *original_icmp_hdr = (struct icmphdr *) (ping->packet + sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(struct iphdr));
-        original_id = ntohs(original_icmp_hdr->un.echo.id);
-        result.seq = ntohs(original_icmp_hdr->un.echo.sequence);
+        struct icmp *original_icmp_hdr = (struct icmp *) (ping->packet + sizeof(struct ip) + ICMP_MINLEN + sizeof(struct ip));
+        original_id = ntohs(original_icmp_hdr->icmp_hun.ih_idseq.icd_id);
+        result.seq = ntohs(original_icmp_hdr->icmp_hun.ih_idseq.icd_seq);
     } else {
-        original_id = ntohs(recv_icmp_hdr->un.echo.id);
-        result.seq = ntohs(recv_icmp_hdr->un.echo.sequence);
+        original_id = ntohs(receive_icmp_header->icmp_hun.ih_idseq.icd_id);
+        result.seq = ntohs(receive_icmp_header->icmp_hun.ih_idseq.icd_seq);
     }
     if (original_id != ping->id || result.type == ICMP_ECHO) {
         return (ping_result_t) {.status = PING_ERROR};
     }
-    result.ttl = ip_hdr->ttl;
+    result.ttl = receive_ip_header->ip_ttl;
     result.time = get_current_time_in_ms() - start_time;
     result.reply_address = reply_addr;
-    result.size = bytes_received - sizeof(struct iphdr);
-    result.code = recv_icmp_hdr->code;
+    result.size = bytes_received - sizeof(struct ip);
+    result.code = receive_icmp_header->icmp_code;
     result.status = PING_SUCCESS;
 
-    uint16_t checksum = recv_icmp_hdr->checksum;
-    recv_icmp_hdr->checksum = 0;
-    if (checksum != calculate_icmp_checksum(recv_icmp_hdr, bytes_received - sizeof(struct iphdr))) {
+    uint16_t checksum = receive_icmp_header->icmp_cksum;
+    receive_icmp_header->icmp_cksum = 0;
+    if (checksum != calculate_icmp_checksum(receive_icmp_header, bytes_received - sizeof(struct ip))) {
         fprintf(stderr, "checksum mismatch from %s\n", ping->original_host);
         return result;
     }
