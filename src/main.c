@@ -17,8 +17,11 @@ static bool is_running = true;
 int main(int argc, char *argv[]) {
     flags_t flags = {0};
 
-    if (parse_flags(argc, argv, &flags) < 0) {
+    int8_t return_code = parse_flags(argc, argv, &flags);
+    if (return_code < 0) {
         return 1;
+    } else if (return_code == 0) {
+        return 0;
     }
 
     struct sigaction sa;

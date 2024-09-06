@@ -17,6 +17,7 @@
 #include <errno.h>
 
 #include "flags.h"
+#include "print.h"
 
 #define ERROR_MSG_TRY_HELP "Try 'ft_ping --help' or 'ft_ping --usage' for more information."
 
@@ -27,7 +28,7 @@ int8_t parse_flags(int argc, char *argv[], flags_t *flags) {
     int option_index = 0;
 
     struct option long_options[] = {
-        {"help", no_argument, 0, 'h'},
+        {"help", no_argument, 0, '?'},
         {"verbose", no_argument, 0, 'v'},
         {"count", required_argument, 0, 'c'},
         {"flood", no_argument, 0, 'f'},
@@ -35,22 +36,23 @@ int8_t parse_flags(int argc, char *argv[], flags_t *flags) {
         {"timeout", required_argument, 0, 'w'},
         {"linger", required_argument, 0, 'W'},
         {"debug", no_argument, 0, 'd'},
+        {"usage", no_argument, 0, 'u'},
         {0, 0, 0, 0}
     };
     flags->interval_value = DEFAULT_INTERVAL;
     flags->linger_value = DEFAULT_LINGER;
 
-    while ((opt = getopt_long(argc, argv, "hvc:fi:w:W:d", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "?vc:fi:w:W:d", long_options, &option_index)) != -1) {
         switch (opt) {
-            case 'h':
-                printf("Usage: %s [options]\n", argv[0]);
-                printf("  -h, --help            Show this help message\n");
-                printf("  -c, --count=NUMBER    Stop after sending NUMBER packets\n");
-                printf("  -i, --interval=NUMBER Wait NUMBER seconds between sending each packet\n");
+            case '?':
+                print_help(argv[0]);
+                return 0;
+            case 'u':
+                print_usage(argv[0]);
                 return 0;
             case 'c':
                 if (convert_arg_to_u32(optarg, &flags->count_value) < 0) {
-                    printf("ft_ping: invalid value (`%s')\n", optarg);
+                    fprintf(stderr, "ft_ping: invalid value (`%s')\n", optarg);
                     return -1;
                 }
                 flags->options.count = true;
@@ -63,21 +65,21 @@ int8_t parse_flags(int argc, char *argv[], flags_t *flags) {
                 break;
             case 'i':
                 if (convert_arg_to_u32(optarg, &flags->interval_value) < 0) {
-                    printf("ft_ping: invalid value (`%s')\n", optarg);
+                    fprintf(stderr, "ft_ping: invalid value (`%s')\n", optarg);
                     return -1;
                 }
                 flags->options.interval = true;
                 break;
             case 'w':
                 if (convert_arg_to_u32(optarg, &flags->timeout_value) < 0) {
-                    printf("ft_ping: invalid value (`%s')\n", optarg);
+                    fprintf(stderr, "ft_ping: invalid value (`%s')\n", optarg);
                     return -1;
                 }
                 flags->options.timeout = true;
                 break;
             case 'W':
                 if (convert_arg_to_u32(optarg, &flags->linger_value) < 0) {
-                    printf("ft_ping: invalid value (`%s')\n", optarg);
+                    fprintf(stderr, "ft_ping: invalid value (`%s')\n", optarg);
                     return -1;
                 }
                 flags->linger_value *= 1000;
@@ -97,7 +99,7 @@ int8_t parse_flags(int argc, char *argv[], flags_t *flags) {
 
     if (optind < argc) {
         flags->hostname = argv[optind];
-        return 0;
+        return 1;
     } else {
         fprintf(stderr, "ft_ping: missing host operand\n");
         fprintf(stderr, ERROR_MSG_TRY_HELP"\n");

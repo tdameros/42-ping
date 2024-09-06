@@ -21,5 +21,7 @@
 void print_ping_start(const icmp_ping_t *ping, const flags_t *flags);
 void print_ping_result(const ping_result_t *result, const flags_t *flags);
 void print_ping_statistics(const icmp_ping_t *ping);
+void print_help(char *binary_name);
+void print_usage(char *binary_name);
 
 #endif
