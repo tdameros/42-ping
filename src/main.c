@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "ping.h"
 #include "print.h"
@@ -13,6 +14,7 @@ static void handle_sigint(int sig);
 static inline bool is_timeout(flags_t flags, uint32_t start_time_in_seconds);
 
 static bool is_running = true;
+static icmp_ping_t ping = {0};
 
 int main(int argc, char *argv[]) {
     flags_t flags = {0};
@@ -32,7 +34,6 @@ int main(int argc, char *argv[]) {
         perror("ft_ping: sigaction");
     }
 
-    icmp_ping_t ping = {0};
     if (init_icmp_ping(&ping, flags) == -1) {
         return 1;
     }
@@ -63,7 +64,9 @@ int main(int argc, char *argv[]) {
 
 static void handle_sigint(int sig) {
     (void) sig;
-    is_running = false;
+    print_ping_statistics(&ping);
+    close(ping.socket);
+    exit(0);
 }
 
 static inline bool is_timeout(flags_t flags, uint32_t start_time_in_seconds) {

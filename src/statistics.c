@@ -44,10 +44,16 @@ void statistics_packet_receive(ping_statistics_t *statistics, double ms) {
 }
 
 double statistics_get_average(const ping_statistics_t *statistics) {
+    if (statistics->packets_received == 0) {
+        return 0;
+    }
     return statistics->sum_ms / statistics->packets_received;
 }
 
 double statistics_get_stddev(const ping_statistics_t *statistics) {
+    if (statistics->packets_received == 0) {
+        return 0;
+    }
     double mean = statistics_get_average(statistics);
     double variance = statistics->sum_squared_ms / statistics->packets_received - mean * mean;
     return sqrt(variance);
