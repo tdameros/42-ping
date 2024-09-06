@@ -190,3 +190,22 @@ static char *get_icmp_description(const ping_result_t *result) {
     }
     return NULL;
 }
+
+void print_help(char *binary_name) {
+    printf("Usage: %s [options]\n", binary_name);
+    printf("  -?, --help            Show this help message\n");
+    printf("  -c, --count=NUMBER    Stop after sending NUMBER packets\n");
+    printf("  -i, --interval=NUMBER Wait NUMBER seconds between sending each packet\n");
+    printf("  -w, --timeout=NUMBER  Stop after NUMBER seconds\n");
+    printf("  -W, --linger=NUMBER   Time to wait for a response in seconds\n");
+    printf("  -v, --verbose         Print detailed output\n");
+    printf("  -d, --debug           Set the SO_DEBUG option\n");
+    printf("  -u, --usage           Print usage\n");
+}
+
+void print_usage(char *binary_name) {
+    printf("Usage: %s [-?vdu] [-c NUMBER] [-i NUMBER] [-w NUMBER] [-W NUMBER]\n"
+           "                 [--help] [--count=NUMBER] [--interval=NUMBER] \n"
+           "                 [--timeout=NUMBER] [--linger=NUMBER] [--verbose]\n"
+           "                 [--debug] [--usage] HOST ...\n", binary_name);
+}
