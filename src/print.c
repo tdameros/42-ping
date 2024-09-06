@@ -75,7 +75,6 @@ icmp_code_description_t icmp_code_description[] =
         {ICMP_TIMXCEED, ICMP_TIMXCEED_INTRANS, "Time to live exceeded"},
         {ICMP_TIMXCEED, ICMP_TIMXCEED_REASS, "Frag reassembly time exceeded"}
     };
-
 #endif
 
 void print_ping_start(const icmp_ping_t *ping, const flags_t *flags) {
