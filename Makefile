@@ -29,6 +29,8 @@ DEP_FLAGS		=	-MMD -MP
 
 # -------------  COMMANDS ------------- #
 
+CPPCHECK		=	cppcheck
+CLANG_FORMAT	=	clang-format-15
 RM				=	rm -rf
 MKDIR			=	mkdir -p
 OS				=	$(shell uname -s)
@@ -74,11 +76,18 @@ debug:	fclean
 
 .PHONY: check-format
 check-format:
-				clang-format -style=file $(SRC) -n --Werror
+				$(CLANG_FORMAT) -style=file $(SRC) -n --Werror
 
 .PHONY: format
 format:
-				clang-format -style=file $(SRC) -i
+				$(CLANG_FORMAT) -style=file $(SRC) -i
+
+.PHONY: cppcheck
+cppcheck:
+				$(CPPCHECK) --quiet --enable=all --inline-suppr --force \
+				--error-exitcode=1 \
+				--suppress=missingIncludeSystem \
+				--std=c99 --language=c $(INCLUDES) $(SRC)
 
 .PHONY: build_docker_image
 build_docker_image:
