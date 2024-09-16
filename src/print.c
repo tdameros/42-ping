@@ -107,11 +107,13 @@ void print_ping_statistics(const icmp_ping_t *ping) {
          transmitted,
          received,
          packet_loss);
-  printf("round-trip min/avg/max/stddev = %.3f/%.3f/%.3f/%.3f ms\n",
-         ping->statistics.min_ms,
-         statistics_get_average(&ping->statistics),
-         ping->statistics.max_ms,
-         statistics_get_stddev(&ping->statistics));
+  if (received > 0) {
+    printf("round-trip min/avg/max/stddev = %.3f/%.3f/%.3f/%.3f ms\n",
+           ping->statistics.min_ms,
+           statistics_get_average(&ping->statistics),
+           ping->statistics.max_ms,
+           statistics_get_stddev(&ping->statistics));
+  }
 }
 
 static void print_ping_echo_reply(const ping_result_t *result, const flags_t *flags) {
@@ -126,7 +128,8 @@ static void print_ping_echo_reply(const ping_result_t *result, const flags_t *fl
 }
 
 static void print_ping_timeout(const ping_result_t *result) {
-  printf("Request timeout for icmp_seq %d\n", result->seq);
+  (void)result;
+  // printf("Request timeout for icmp_seq %d\n", result->seq);
 }
 
 static void print_ping_description(const ping_result_t *result, const flags_t *flags) {
