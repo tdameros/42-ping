@@ -10,6 +10,7 @@
 #include "time.h"
 
 static void handle_sigint(int sig);
+static void handle_fatal_error(void);
 static inline bool is_timeout(flags_t flags, uint32_t start_time_in_seconds);
 
 static bool is_running = true;
@@ -41,6 +42,9 @@ int main(int argc, char *argv[]) {
   print_ping_start(&ping, &flags);
   uint32_t start_time = get_current_time_in_seconds();
   result = icmp_ping(&ping, flags);
+  if (PING_FATAL_ERROR == result.status) {
+    handle_fatal_error();
+  }
   print_ping_result(&result, &flags);
   while (is_running) {
     if (is_timeout(flags, start_time)) {
@@ -50,6 +54,9 @@ int main(int argc, char *argv[]) {
       sleep(flags.interval_value);
     }
     result = icmp_ping(&ping, flags);
+    if (PING_FATAL_ERROR == result.status) {
+      handle_fatal_error();
+    }
     print_ping_result(&result, &flags);
     if (flags.options.count && ping.seq >= flags.count_value) {
       break;
@@ -65,6 +72,11 @@ static void handle_sigint(int sig) {
   print_ping_statistics(&ping);
   close(ping.socket);
   exit(0);
+}
+
+static void handle_fatal_error(void) {
+  close(ping.socket);
+  exit(1);
 }
 
 static inline bool is_timeout(flags_t flags, uint32_t start_time_in_seconds) {

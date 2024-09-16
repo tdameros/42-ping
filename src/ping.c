@@ -59,7 +59,9 @@ int32_t init_icmp_ping(icmp_ping_t *ping, flags_t flags) {
 
 ping_result_t icmp_ping(icmp_ping_t *ping, flags_t flags) {
   double start_time = get_current_time_in_ms();
-  send_icmp_ping(ping);
+  if (send_icmp_ping(ping) < 0) {
+    return (ping_result_t){.status = PING_FATAL_ERROR};
+  }
   ping_result_t result = receive_icmp_ping(ping, flags, start_time);
   ping->seq++;
   return result;
@@ -73,7 +75,7 @@ static int32_t send_icmp_ping(icmp_ping_t *ping) {
              0,
              (struct sockaddr *)&ping->destination,
              sizeof(ping->destination)) < 0) {
-    perror("ft_ping: sendto");
+    perror("ft_ping: sending packet");
     return -1;
   }
   statistics_packet_transmit(&ping->statistics);
