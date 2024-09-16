@@ -46,6 +46,7 @@ typedef enum {
     PING_SUCCESS,
     PING_TIMEOUT,
     PING_ERROR,
+    PING_FATAL_ERROR,
     PING_UNKNOWN_HOST,
 } ping_status_t;
 
