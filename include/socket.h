@@ -18,5 +18,6 @@
 int32_t create_icmp_socket(void);
 int32_t set_icmp_socket_timeout(int32_t socketfd, uint32_t seconds, uint32_t microseconds);
 int32_t set_icmp_socket_debug(int32_t socketfd, bool is_debug);
+int32_t set_icmp_socket_broadcast(int32_t socketfd, bool is_broadcast);
 int32_t resolve_host(char *hostname, struct sockaddr_in *address);
 #endif

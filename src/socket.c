@@ -32,7 +32,13 @@ int32_t set_icmp_socket_timeout(int32_t socketfd, uint32_t seconds, uint32_t mic
 }
 
 int32_t set_icmp_socket_debug(int32_t socketfd, bool is_debug) {
-  return setsockopt(socketfd, SOL_SOCKET, SO_DEBUG, &is_debug, sizeof(is_debug));
+  uint32_t option = is_debug;
+  return setsockopt(socketfd, SOL_SOCKET, SO_DEBUG, &option, sizeof(option));
+}
+
+int32_t set_icmp_socket_broadcast(int32_t socketfd, bool is_broadcast) {
+  uint32_t option = is_broadcast;
+  return setsockopt(socketfd, SOL_SOCKET, SO_BROADCAST, &option, sizeof(option));
 }
 
 int32_t resolve_host(char *hostname, struct sockaddr_in *address) {
