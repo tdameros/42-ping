@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
   }
   print_ping_result(&result, &flags);
   while (is_running) {
-    if (is_timeout(flags, start_time)) {
+    if (is_timeout(flags, start_time) || (flags.options.count && ping.seq >= flags.count_value)) {
       break;
     }
     if (!flags.options.flood) {
@@ -58,9 +58,6 @@ int main(int argc, char *argv[]) {
       handle_fatal_error();
     }
     print_ping_result(&result, &flags);
-    if (flags.options.count && ping.seq >= flags.count_value) {
-      break;
-    }
   }
   print_ping_statistics(&ping);
   close(ping.socket);
@@ -81,6 +78,5 @@ static void handle_fatal_error(void) {
 
 static inline bool is_timeout(flags_t flags, uint32_t start_time_in_seconds) {
   return (flags.options.timeout &&
-          get_current_time_in_seconds() - start_time_in_seconds + flags.interval_value >=
-              flags.timeout_value);
+          get_current_time_in_seconds() - start_time_in_seconds >= flags.timeout_value);
 }

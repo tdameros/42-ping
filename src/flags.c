@@ -49,7 +49,7 @@ int8_t parse_flags(int argc, char *argv[], flags_t *flags) {
       print_usage(argv[0]);
       return 0;
     case 'c':
-      if (convert_arg_to_u32(optarg, &flags->count_value) < 0) {
+      if (convert_arg_to_u32(optarg, &flags->count_value) < 0 || flags->count_value == 0) {
         fprintf(stderr, "ft_ping: invalid value (`%s')\n", optarg);
         return -1;
       }
@@ -62,21 +62,21 @@ int8_t parse_flags(int argc, char *argv[], flags_t *flags) {
       flags->options.flood = true;
       break;
     case 'i':
-      if (convert_arg_to_u32(optarg, &flags->interval_value) < 0) {
+      if (convert_arg_to_u32(optarg, &flags->interval_value) < 0 || flags->interval_value == 0) {
         fprintf(stderr, "ft_ping: invalid value (`%s')\n", optarg);
         return -1;
       }
       flags->options.interval = true;
       break;
     case 'w':
-      if (convert_arg_to_u32(optarg, &flags->timeout_value) < 0) {
+      if (convert_arg_to_u32(optarg, &flags->timeout_value) < 0 || flags->timeout_value == 0) {
         fprintf(stderr, "ft_ping: invalid value (`%s')\n", optarg);
         return -1;
       }
       flags->options.timeout = true;
       break;
     case 'W':
-      if (convert_arg_to_u32(optarg, &flags->linger_value) < 0) {
+      if (convert_arg_to_u32(optarg, &flags->linger_value) < 0 || flags->linger_value == 0) {
         fprintf(stderr, "ft_ping: invalid value (`%s')\n", optarg);
         return -1;
       }
