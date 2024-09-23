@@ -208,6 +208,7 @@ void print_help(const char *binary_name) {
   printf("Usage: %s [options]\n", binary_name);
   printf("  -?, --help            Show this help message\n");
   printf("  -c, --count=NUMBER    Stop after sending NUMBER packets\n");
+  printf("  -f, --flood           Flood ping\n");
   printf("  -i, --interval=NUMBER Wait NUMBER seconds between sending each packet\n");
   printf("  -w, --timeout=NUMBER  Stop after NUMBER seconds\n");
   printf("  -W, --linger=NUMBER   Time to wait for a response in seconds\n");
