@@ -37,11 +37,18 @@ int32_t init_icmp_ping(icmp_ping_t *ping, flags_t flags) {
     perror("ft_ping: socket");
     return -1;
   }
+  if (set_icmp_socket_broadcast(socket, 1) < 0) {
+    perror("ft_ping: socket_broadcast");
+    return -1;
+  }
   if (set_icmp_socket_timeout(socket, 1, 0) < 0) {
     perror("ft_ping: socket_timeout");
     return -1;
   }
-  set_icmp_socket_debug(socket, flags.options.debug);
+  if (set_icmp_socket_debug(socket, flags.options.debug) < 0) {
+    perror("ft_ping: socket_debug");
+    return -1;
+  }
   struct sockaddr_in address = {0};
   if (resolve_host(flags.hostname, &address) < 0) {
     fprintf(stderr, "ft_ping: unknow host\n");
